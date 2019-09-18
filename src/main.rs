@@ -1,4 +1,5 @@
 use glob::Pattern;
+use jsonschema_valid::validate;
 use lazy_static::lazy_static;
 use reqwest::Client;
 use serde::Deserialize;
@@ -73,20 +74,15 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
     for file in files {
         if let Some(prov) = &provided {
-            for err in jsonschema_valid::validate(&local(file)?, &prov, None, true).get_errors() {
+            for err in validate(&local(file)?, &prov, None, true).get_errors() {
                 println!("{}", err);
             }
         } else {
             for schema in SCHEMA_STORE.clone() {
                 for file_matcher in schema.file_match {
-                    if glob::Pattern::new(&file_matcher)?.matches(&file) {
-                        for err in jsonschema_valid::validate(
-                            &local(&file)?,
-                            &remote(&schema.url)?,
-                            None,
-                            true,
-                        )
-                        .get_errors()
+                    if Pattern::new(&file_matcher)?.matches(&file) {
+                        for err in
+                            validate(&local(&file)?, &remote(&schema.url)?, None, true).get_errors()
                         {
                             println!("{}", err);
                         }
