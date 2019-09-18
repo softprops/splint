@@ -1,11 +1,9 @@
+use glob::Pattern;
 use lazy_static::lazy_static;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
-use std::error::Error;
-use std::fs::File;
-use std::path::Path;
-use std::process::exit;
+use std::{error::Error, fs::File, path::Path, process::exit};
 use structopt::StructOpt;
 
 const CATALOG: &str = include_str!("../data/catalog.json");
@@ -21,6 +19,7 @@ lazy_static! {
 struct Schema {
     name: String,
     description: String,
+    #[serde(default)]
     file_match: Vec<String>,
     url: String,
 }
@@ -98,4 +97,32 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_file_matches_compile() {
+        for schema in SCHEMA_STORE.clone() {
+            for file_match in schema.file_match {
+                assert!(Pattern::new(&file_match).is_ok())
+            }
+        }
+    }
+
+    #[test]
+    fn test_file_matches() {
+        for (file, expect) in &[(".angular-cli.json", ".angular-cli.json")] {
+            assert_eq!(
+                SCHEMA_STORE.iter().find_map(|value| value
+                    .file_match
+                    .iter()
+                    .find(|pat| Pattern::new(pat).unwrap().matches(file))
+                    .map(|_| value.name.clone())),
+                Some(expect.to_string())
+            )
+        }
+    }
 }
