@@ -10,3 +10,10 @@
 </div>
 
 <br />
+
+## about
+
+Splint is intended to be a continuous integration tool for your instrustructure as code. It uses json schemas to validate your
+static json and yaml files. Most infrastruture files have a well defined format. This format can typically be expressed by a [JSON schema](https://json-schema.org/). Splint leverages [JSON Schema store](http://schemastore.org/json/) by default to resolve a schema that applies to your files based on their name. You may also provide your own schema for your custom infrastucture files.
+
+Doug Tangren (softprops) 2019
