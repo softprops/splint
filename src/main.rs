@@ -1,6 +1,7 @@
 use glob::Pattern;
 use jsonschema_valid::{validate, ValidationError};
 use lazy_static::lazy_static;
+use regex::Regex;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
@@ -8,9 +9,10 @@ use std::{error::Error, fs::File, path::Path, process::exit};
 use structopt::StructOpt;
 
 lazy_static! {
-    static ref SCHEMA_STORE: Vec<Schema> = serde_json::from_str::<SchemaStore>(include_str!("../data/catalog.json"))
-        .expect("unparsable schema store")
-        .schemas;
+    static ref SCHEMA_STORE: Vec<Schema> =
+        serde_json::from_str::<SchemaStore>(include_str!("../data/catalog.json"))
+            .expect("unparsable schema store")
+            .schemas;
 }
 
 #[derive(Deserialize, Clone)]
@@ -73,7 +75,18 @@ fn main() {
 }
 
 fn fmt(err: &ValidationError) -> String {
-    err.to_string()
+    // work around until https://github.com/mdboom/jsonschema-valid/issues/2
+    lazy_static! {
+        static ref RE: Regex =
+            Regex::new(r#"At (.+) with schema at (.+): (.+)"#).expect("invalid regex");
+    };
+    let err_str = err.to_string();
+    let caps = RE
+        .captures(err_str.as_str())
+        .unwrap_or_else(|| panic!("{} didn't match format", err_str));
+    let field = caps.get(1).map(|c| c.as_str()).unwrap_or_default();
+    let msg = caps.get(3).map(|c| c.as_str()).unwrap_or_default();
+    format!("{}: {}", field, msg)
 }
 
 fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
