@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::error::Error;
 use std::fs::File;
 use std::path::Path;
+use std::process::exit;
 use structopt::StructOpt;
 
 const CATALOG: &str = include_str!("../data/catalog.json");
@@ -30,6 +31,10 @@ struct SchemaStore {
 }
 
 #[derive(StructOpt)]
+#[structopt(
+    name = "splint",
+    about = "ensures structures with a well defined shape stay in place"
+)]
 struct Opts {
     #[structopt(short = "s", long = "schema", help = "json schema to apply")]
     schema: Option<String>,
@@ -51,7 +56,14 @@ where
     Ok(serde_yaml::from_reader(File::open(path)?)?)
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
+    if let Err(err) = run() {
+        eprintln!("{}", err);
+        exit(1)
+    }
+}
+
+fn run() -> Result<(), Box<dyn Error>> {
     let Opts { schema, files } = Opts::from_args();
     let provided = match schema {
         Some(location) => match &location[..] {
