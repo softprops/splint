@@ -10,9 +10,9 @@ jobs:
         uses: hecrj/setup-rust-action@v1
         with:
           components: rustfmt
-          rust: nightly
+          rust-version: nightly
       - uses: actions/checkout@v1
-      - run: cargo +nightly fmt --all -- --check
+      - run: cargo fmt --all -- --check
 
   lint:
     runs-on: ubuntu-latest
