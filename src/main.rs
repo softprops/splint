@@ -80,8 +80,8 @@ fn run() -> Result<(), Box<dyn Error>> {
                     errors += 1;
                 }
             } else {
-                for schema in SCHEMA_STORE.clone() {
-                    for file_matcher in schema.file_match {
+                for schema in SCHEMA_STORE.iter() {
+                    for file_matcher in schema.file_match.iter() {
                         if Pattern::new(&file_matcher)?.matches(&file) {
                             for err in validate(&local(&file)?, &remote(&schema.url)?, None, true)
                                 .get_errors()
