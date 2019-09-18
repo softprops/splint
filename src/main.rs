@@ -56,6 +56,17 @@ where
     Ok(serde_yaml::from_reader(File::open(path)?)?)
 }
 
+fn schema(opts: &Opts) -> Result<Option<Value>, Box<dyn Error>> {
+    let Opts { schema, .. } = opts;
+    Ok(match schema {
+        Some(location) => match &location[..] {
+            url if url.starts_with("http") => Some(remote(url)?),
+            path => Some(local(path)?),
+        },
+        _ => None,
+    })
+}
+
 fn main() {
     if let Err(err) = lint(Opts::from_args()) {
         eprintln!("{}", err);
@@ -64,14 +75,8 @@ fn main() {
 }
 
 fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
-    let Opts { schema, files } = opts;
-    let provided = match schema {
-        Some(location) => match &location[..] {
-            url if url.starts_with("http") => Some(remote(url)?),
-            path => Some(local(path)?),
-        },
-        _ => None,
-    };
+    let provided = schema(&opts)?;
+    let Opts { files, .. } = opts;
     let errors: Result<usize, Box<dyn Error>> =
         files.into_iter().try_fold(0, |mut errors, file| {
             if let Some(prov) = &provided {
