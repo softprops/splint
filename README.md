@@ -9,11 +9,11 @@
   ensures structures with a well defined shape stay in place
 </div>
 
-<div align="center">
+<p align="center">
   <a href="https://github.com/softprops/splint/actions">
 		<img src="https://github.com/softprops/splint/workflows/Main/badge.svg"/>
 	</a>
-</div>
+</p>
 
 <br />
 
