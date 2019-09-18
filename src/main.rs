@@ -72,24 +72,32 @@ fn run() -> Result<(), Box<dyn Error>> {
         },
         _ => None,
     };
-    for file in files {
-        if let Some(prov) = &provided {
-            for err in validate(&local(file)?, &prov, None, true).get_errors() {
-                println!("{}", err);
-            }
-        } else {
-            for schema in SCHEMA_STORE.clone() {
-                for file_matcher in schema.file_match {
-                    if Pattern::new(&file_matcher)?.matches(&file) {
-                        for err in
-                            validate(&local(&file)?, &remote(&schema.url)?, None, true).get_errors()
-                        {
-                            println!("{}", err);
+    let errors: Result<usize, Box<dyn Error>> =
+        files.into_iter().try_fold(0, |mut errors, file| {
+            if let Some(prov) = &provided {
+                for err in validate(&local(file)?, &prov, None, true).get_errors() {
+                    eprintln!("{}", err);
+                    errors += 1;
+                }
+            } else {
+                for schema in SCHEMA_STORE.clone() {
+                    for file_matcher in schema.file_match {
+                        if Pattern::new(&file_matcher)?.matches(&file) {
+                            for err in validate(&local(&file)?, &remote(&schema.url)?, None, true)
+                                .get_errors()
+                            {
+                                eprintln!("{}", err);
+                                errors += 1;
+                            }
                         }
                     }
                 }
             }
-        }
+            Ok(errors)
+        });
+
+    if errors? > 0 {
+        exit(1);
     }
 
     Ok(())
