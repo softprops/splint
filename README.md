@@ -11,7 +11,7 @@
 
 <div align="center">
   <a href="https://github.com/softprops/splint/actions">
-		<img src="https://github.com/softprops/splint/workflows/badge.svg"/>
+		<img src="https://github.com/softprops/splint/workflows/Main/badge.svg"/>
 	</a>
 </div>
 
