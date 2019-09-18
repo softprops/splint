@@ -1,5 +1,5 @@
 use glob::Pattern;
-use jsonschema_valid::validate;
+use jsonschema_valid::{validate, ValidationError};
 use lazy_static::lazy_static;
 use reqwest::Client;
 use serde::Deserialize;
@@ -7,10 +7,8 @@ use serde_json::Value;
 use std::{error::Error, fs::File, path::Path, process::exit};
 use structopt::StructOpt;
 
-const CATALOG: &str = include_str!("../data/catalog.json");
-
 lazy_static! {
-    static ref SCHEMA_STORE: Vec<Schema> = serde_json::from_str::<SchemaStore>(CATALOG)
+    static ref SCHEMA_STORE: Vec<Schema> = serde_json::from_str::<SchemaStore>(include_str!("../data/catalog.json"))
         .expect("unparsable schema store")
         .schemas;
 }
@@ -74,14 +72,18 @@ fn main() {
     }
 }
 
+fn fmt(err: &ValidationError) -> String {
+    err.to_string()
+}
+
 fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
     let provided = schema(&opts)?;
     let Opts { files, .. } = opts;
     let errors: Result<usize, Box<dyn Error>> =
         files.into_iter().try_fold(0, |mut errors, file| {
             if let Some(prov) = &provided {
-                for err in validate(&local(file)?, &prov, None, true).get_errors() {
-                    eprintln!("{}", err);
+                for err in validate(&local(&file)?, &prov, None, true).get_errors() {
+                    eprintln!("{} {}", file, fmt(err));
                     errors += 1;
                 }
             } else {
@@ -91,7 +93,7 @@ fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
                             for err in validate(&local(&file)?, &remote(&schema.url)?, None, true)
                                 .get_errors()
                             {
-                                eprintln!("{}", err);
+                                eprintln!("{} {}", file, fmt(err));
                                 errors += 1;
                             }
                         }
