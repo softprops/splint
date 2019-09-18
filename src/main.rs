@@ -57,14 +57,14 @@ where
 }
 
 fn main() {
-    if let Err(err) = run() {
+    if let Err(err) = lint(Opts::from_args()) {
         eprintln!("{}", err);
         exit(1)
     }
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let Opts { schema, files } = Opts::from_args();
+fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
+    let Opts { schema, files } = opts;
     let provided = match schema {
         Some(location) => match &location[..] {
             url if url.starts_with("http") => Some(remote(url)?),
