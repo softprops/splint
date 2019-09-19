@@ -80,7 +80,8 @@ jobs:
         targets: ${{ matrix.target }}
     - name: Install musl tools
       if: matrix.os == 'ubuntu-latest'
-      run: apt get install musl-tools
+      run: |
+        sudo get-get install -y musl-tools
     - name: Checkout
       uses: actions/checkout@v1
     - name: Build
