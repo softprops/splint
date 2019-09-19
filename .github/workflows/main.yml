@@ -78,6 +78,9 @@ jobs:
       with:
         rust-version: ${{ matrix.rust }}
         targets: ${{ matrix.target }}
+    - name: Install musl tools
+      if: matrix.os == 'ubuntu-latest'
+      run: apt get install musl-tools
     - name: Checkout
       uses: actions/checkout@v1
     - name: Build
