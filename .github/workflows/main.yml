@@ -81,7 +81,7 @@ jobs:
     - name: Install musl tools
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo get-get install -y musl-tools
+        sudo apt-get install -y musl-tools
     - name: Checkout
       uses: actions/checkout@v1
     - name: Build
