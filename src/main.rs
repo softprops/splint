@@ -1,3 +1,5 @@
+mod report;
+
 use glob::Pattern;
 use jsonschema_valid::{validate, ValidationError};
 use lazy_static::lazy_static;
@@ -68,13 +70,18 @@ fn schema(opts: &Opts) -> Result<Option<Value>, Box<dyn Error>> {
 }
 
 fn main() {
-    if let Err(err) = lint(Opts::from_args()) {
-        eprintln!("{}", err);
+    if let Err(_) = lint(Opts::from_args()) {
+        //eprintln!("{}", err);
         exit(1)
     }
 }
 
-fn fmt(err: &ValidationError) -> String {
+fn error(
+    err: &ValidationError,
+    file: &str,
+    body: &str,
+    pos: &lincolns::Positions,
+) {
     // work around until https://github.com/mdboom/jsonschema-valid/issues/2
     lazy_static! {
         static ref RE: Regex =
@@ -85,8 +92,12 @@ fn fmt(err: &ValidationError) -> String {
         .captures(err_str.as_str())
         .unwrap_or_else(|| panic!("{} didn't match format", err_str));
     let field = caps.get(1).map(|c| c.as_str()).unwrap_or_default();
+
     let msg = caps.get(3).map(|c| c.as_str()).unwrap_or_default();
-    format!("{}: {}", field, msg)
+    if let Some(position) = pos.get(format!("/{}", field)) {
+        report::report(file, body, position, &msg);
+    }
+    //format!("{}: {}", field, msg)
 }
 
 fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
@@ -94,9 +105,11 @@ fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
     let Opts { files, .. } = opts;
     let errors: Result<usize, Box<dyn Error>> =
         files.into_iter().try_fold(0, |mut errors, file| {
+            let body = std::fs::read_to_string(&file)?;
+            let pos = lincolns::from_str(&body)?;
             if let Some(prov) = &provided {
                 for err in validate(&local(&file)?, &prov, None, true).get_errors() {
-                    eprintln!("{} {}", file, fmt(err));
+                    error(err, &file, &body, &pos);
                     errors += 1;
                 }
             } else {
@@ -106,7 +119,7 @@ fn lint(opts: Opts) -> Result<(), Box<dyn Error>> {
                             for err in validate(&local(&file)?, &remote(&schema.url)?, None, true)
                                 .get_errors()
                             {
-                                eprintln!("{} {}", file, fmt(err));
+                                error(err, &file, &body, &pos);
                                 errors += 1;
                             }
                         }
